@@ -13,11 +13,8 @@ import queue
 import sys
 
 # Optional dependency: pyrubberband for high-quality time-stretching
-try:
-    import pyrubberband as pyrb
-    HAS_RUBBERBAND = True
-except ImportError:
-    HAS_RUBBERBAND = False
+# User requested to disable pyrubberband, so we will always use librosa's time_stretch.
+HAS_RUBBERBAND = False
 
 # --- Configuration ---
 SR = 44100  # Target sample rate
@@ -279,7 +276,7 @@ class GranularGUI(tk.Tk):
 
                 # Detect BPM and beat positions
                 tempo, beats = librosa.beat.beat_track(y=audio, sr=SR)
-                f.bpm = tempo
+                f.bpm = float(tempo)
 
                 # Find first non-silent beat
                 beat_times = librosa.frames_to_time(beats, sr=SR)
