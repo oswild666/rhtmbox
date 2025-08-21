@@ -126,9 +126,13 @@ class GranularGUI(tk.Tk):
         self.tree.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         self.tree.bind("<Button-1>", self.on_tree_click)
 
+        # --- Parameter Sections (Side-by-side) ---
+        param_container = ttk.Frame(frame)
+        param_container.pack(fill=tk.X, padx=5, pady=5)
+
         # --- Global Parameters ---
-        params_frame = ttk.LabelFrame(frame, text="3. Global & Generation Parameters")
-        params_frame.pack(fill=tk.X, padx=10, pady=5)
+        params_frame = ttk.LabelFrame(param_container, text="3. Global & Generation Parameters")
+        params_frame.pack(side=tk.LEFT, fill=tk.Y, padx=5, pady=5, expand=True)
 
         self.target_bpm = self.create_param_entry(params_frame, "Target BPM:", 120.0)
         self.k_states = self.create_param_entry(params_frame, "K (Clusters):", 16)
@@ -137,8 +141,8 @@ class GranularGUI(tk.Tk):
         self.trim_db = self.create_param_entry(params_frame, "Silence Trim (dB):", 60.0)
 
         # --- Markov Parameters ---
-        markov_frame = ttk.LabelFrame(frame, text="4. Markov Model Parameters")
-        markov_frame.pack(fill=tk.X, padx=10, pady=5)
+        markov_frame = ttk.LabelFrame(param_container, text="4. Markov Model Parameters")
+        markov_frame.pack(side=tk.LEFT, fill=tk.Y, padx=5, pady=5, expand=True)
 
         self.markov_order = self.create_param_entry(markov_frame, "Order (1 or 2):", 1)
         self.markov_alpha = self.create_param_entry(markov_frame, "Smoothing (α):", 0.1)
@@ -188,7 +192,7 @@ class GranularGUI(tk.Tk):
         else:
             var = tk.StringVar(master=self, value=str(default_value))
 
-        entry = ttk.Entry(frame, textvariable=var)
+        entry = ttk.Entry(frame, textvariable=var, width=10)
         entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
         return var
 
