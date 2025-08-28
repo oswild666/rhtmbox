@@ -313,43 +313,15 @@ class GranularGUI(tk.Tk):
     # --- Core Logic Tasks (executed in threads) ---
 
     def _analyze_files_task(self):
-        """Task to load, analyze, and extract metadata from all media files."""
+        """Main task to analyze all media files by calling helper methods."""
         self.ui_queue.put(("set_progress", self.analysis_progress, 0))
-        target_bpm = self.target_bpm.get()
-        trim_db = self.trim_db.get()
 
         for i, f in enumerate(self.project.all_files):
             try:
                 if f.file_type == 'audio':
-                    # Load, resample to mono 44.1kHz
-                    audio, _ = librosa.load(f.filepath, sr=SR, mono=True)
-
-                    # Trim leading/trailing silence
-                    audio, _ = librosa.effects.trim(audio, top_db=trim_db)
-                    f.audio = audio
-
-                    # Detect BPM and beat positions
-                    tempo, beats = librosa.beat.beat_track(y=audio, sr=SR)
-                    f.bpm = float(tempo)
-
-                    # Find first non-silent beat
-                    beat_times = librosa.frames_to_time(beats, sr=SR)
-                    f.first_beat_offset_ms = beat_times[0] * 1000 if len(beat_times) > 0 else 0
-
-                    # Calculate stretch ratio if needed
-                    if f.stretch.get():
-                        f.stretch_ratio = target_bpm / f.bpm if f.bpm > 0 else 1.0
-                    else:
-                        f.stretch_ratio = 1.0
-
+                    self._analyze_audio_file(f)
                 elif f.file_type == 'video':
-                    cap = cv2.VideoCapture(f.filepath)
-                    if not cap.isOpened():
-                        raise Exception("Could not open video file.")
-                    f.fps = cap.get(cv2.CAP_PROP_FPS)
-                    f.frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                    cap.release()
-
+                    self._analyze_video_file(f)
             except Exception as e:
                 self.ui_queue.put(("error", "Analysis Error", f"Could not process {f.filename}:\n{e}"))
 
@@ -357,6 +329,41 @@ class GranularGUI(tk.Tk):
 
         self.ui_queue.put(("update_table",))
         self.ui_queue.put(("info", "Analysis Complete", "File analysis finished."))
+
+    def _analyze_audio_file(self, f):
+        """Analyzes a single audio file."""
+        target_bpm = self.target_bpm.get()
+        trim_db = self.trim_db.get()
+
+        # Load, resample to mono 44.1kHz
+        audio, _ = librosa.load(f.filepath, sr=SR, mono=True)
+
+        # Trim leading/trailing silence
+        audio, _ = librosa.effects.trim(audio, top_db=trim_db)
+        f.audio = audio
+
+        # Detect BPM and beat positions
+        tempo, beats = librosa.beat.beat_track(y=audio, sr=SR)
+        f.bpm = float(tempo)
+
+        # Find first non-silent beat
+        beat_times = librosa.frames_to_time(beats, sr=SR)
+        f.first_beat_offset_ms = beat_times[0] * 1000 if len(beat_times) > 0 else 0
+
+        # Calculate stretch ratio if needed
+        if f.stretch.get():
+            f.stretch_ratio = target_bpm / f.bpm if f.bpm > 0 else 1.0
+        else:
+            f.stretch_ratio = 1.0
+
+    def _analyze_video_file(self, f):
+        """Analyzes a single video file."""
+        cap = cv2.VideoCapture(f.filepath)
+        if not cap.isOpened():
+            raise Exception("Could not open video file.")
+        f.fps = cap.get(cv2.CAP_PROP_FPS)
+        f.frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        cap.release()
 
     def _extract_grains_task(self):
         """Task to process audio and video files into discrete 'grains'."""
