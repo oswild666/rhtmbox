@@ -7,25 +7,24 @@ The application provides a graphical user interface (GUI) to load audio, analyze
 ## Features
 
 - **Intuitive GUI:** A clear, step-by-step interface built with Tkinter.
-- **Multi-file Support:** Load and process multiple audio files (`.wav`, `.mp3`, `.flac`, etc.) at once.
-- **Automatic Audio Analysis:**
-    - Detects BPM and the first beat of each file.
-    - Optionally time-stretches audio to a target BPM to synchronize all sources.
-    - Trims leading and trailing silence to process only meaningful audio.
-- **Granular Synthesis Engine:**
+- **Unified Media Support:** Load and process both audio (`.wav`, `.mp3`, etc.) and video (`.mp4`, `.mov`, etc.) files in the same session.
+- **Audio-Driven Generation:** The core sequencing logic is driven by the analysis of audio files.
+- **Automatic Analysis:**
+    - For audio, detects BPM and the first beat.
+    - For video, detects FPS and frame count.
+    - Optionally time-stretches audio to a target BPM.
+- **Synchronized Graining:**
     - Slices audio into beat-synchronized "grains".
-    - Applies fade-in/out to each grain to prevent clicks.
+    - Slices video into video clips of the same duration, creating a pool of video "grains".
 - **Machine Learning Core:**
-    - Extracts a rich set of audio features for each grain (spectral properties, MFCCs, RMS, etc.).
-    - Uses K-Means clustering to group acoustically similar grains into "states".
-    - Builds a 1st or 2nd order Markov Chain to model the transitions between these states.
+    - Builds a Markov Chain model based on the acoustic features of the *audio* grains.
 - **Creative Sequence Generation:**
-    - Generates a new sequence of states by traversing the Markov model.
-    - "Temperature" control allows you to adjust the randomness of the output, from predictable to chaotic.
+    - Generates a new sequence based on the learned audio transitions.
+    - For each step in the sequence, a random video grain is selected to create a new visual montage.
+    - "Temperature" control allows you to adjust the randomness of the audio sequence.
 - **High-Quality Output:**
-    - Concatenates grains with a crossfade for a smooth, continuous audio stream.
-    - Allows direct playback of the generated sequence through a selected audio device.
-    - Save your creation as a high-quality `.wav` file.
+    - Save the generated audio separately as a `.wav` file.
+    - Render the final audio and video montage into a single `.mp4` file using FFmpeg.
 
 ## Installation & Dependencies
 
@@ -40,10 +39,16 @@ This script is written for Python 3. It relies on several external libraries for
 2.  **Install the required packages:**
     You can install all dependencies using pip:
     ```bash
-    pip install numpy librosa soundfile sounddevice scikit-learn
+    pip install numpy librosa soundfile sounddevice scikit-learn opencv-python
     ```
 
     *Note: The application uses `tkinter` for the GUI, which is typically included with standard Python installations. If it's missing, you may need to install it separately (e.g., `sudo apt-get install python3-tk` on Debian/Ubuntu).*
+
+3.  **Install FFmpeg (Required for Video Export):**
+    To save the final combined audio/video file, you must have **FFmpeg** installed on your system and accessible in your PATH.
+    - **Windows:** Download a build from the [official FFmpeg website](https://ffmpeg.org/download.html) and add the `bin` directory to your system's PATH environment variable.
+    - **macOS (using Homebrew):** `brew install ffmpeg`
+    - **Debian/Ubuntu:** `sudo apt-get install ffmpeg`
 
 ## How to Use
 
@@ -54,20 +59,21 @@ This script is written for Python 3. It relies on several external libraries for
 
 2.  **Select Output Device:** From the first dropdown menu, choose the audio device you want to use for playback.
 
-3.  **Select Audio Files:** Click the "Select Files..." button to load one or more audio files. Their details will appear in the table.
+3.  **Select Media Files:** Click the "Select Files..." button to load your source audio and video files. Their details will appear in the table. You must include at least one audio file to drive the generation.
 
 4.  **Configure Parameters:**
-    - **Global & Generation:** Set the `Target BPM` for the output, the number of `K (Clusters)` to group grains into, the total `Output Beats` for the sequence, and other settings.
-    - **Markov Model:** Choose the `Order` (1 or 2) and adjust `Smoothing` and `Temperature` to control the generation logic.
+    - **Global & Generation:** Set the `Target BPM` for the output. This controls the speed of both the audio and video cuts.
+    - **Markov Model:** Configure the model that learns from your audio files.
 
 5.  **Execute the Workflow:** Press the main buttons in order from left to right.
-    - **Analyze Files:** Loads audio, finds BPM, and calculates the required time-stretch ratio for each file.
-    - **Extract Grains:** Stretches the audio, slices it into beat-sized grains, and runs feature extraction and clustering.
-    - **Generate Sequence:** Builds the Markov model and creates the new audio sequence.
+    - **Analyze Files:** Loads media, finds BPM for audio and FPS for video.
+    - **Extract Grains:** Slices audio and creates video grain references.
+    - **Generate Sequence:** Builds the Markov model from the audio and generates a new sequence, picking random video clips to match the audio.
 
 6.  **Audition and Save:**
-    - Click **Play** to listen to the generated sequence.
-    - Click **Save WAV...** to export the result to a file.
+    - **Play Audio:** Listen to the generated audio track.
+    - **Save Audio Only...:** Export just the audio as a `.wav` file.
+    - **Save Final Video...:** Combine the generated audio and video into a final `.mp4` file. **(Requires FFmpeg)**.
 
 *(Note: It is recommended to add a screenshot of the application GUI here for clarity.)*
 
